@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>پنل مدیریت</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="admin-header">
+            <h1>داشبورد مدیریت</h1>
+            <a href="/logout">خروج</a>
+        </header>
+
+        <div class="card">
+            <h2>ساخت اتاق جدید</h2>
+            <form id="create-room-form">
+                <input type="text" id="room-name-input" placeholder="نام اتاق (انگلیسی، بدون فاصله)" required>
+                <button type="submit">ساخت اتاق</button>
+            </form>
+        </div>
+
+        <div id="rooms-management-container">
+            </div>
+    </div>
+<script>
+    const createRoomForm = document.getElementById('create-room-form');
+    const roomsContainer = document.getElementById('rooms-management-container');
+    let allRoomsData = [];
+
+    // --- API Call Functions ---
+    const api = {
+        get: (url) => fetch(url).then(res => res.ok ? res.json() : Promise.reject(res)),
+        post: (url, body) => fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) }).then(res => res.ok ? res.json() : Promise.reject(res)),
+        put: (url, body) => fetch(url, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) }).then(res => res.ok ? res.json() : Promise.reject(res)),
+        delete: (url) => fetch(url, { method: 'DELETE' }).then(res => res.ok ? res.json() : Promise.reject(res)),
+    };
+    
+    // --- Render Functions ---
+    function renderRooms(rooms) {
+        roomsContainer.innerHTML = '';
+        rooms.forEach(room => {
+            const roomCard = document.createElement('div');
+            roomCard.className = 'card room-card';
+            roomCard.innerHTML = `
+                <div class="room-header">
+                    <h3>اتاق: ${room.name} (ID: ${room.id})</h3>
+                    <a href="/${room.name}" target="_blank">مشاهده اتاق</a>
+                </div>
+                <div class="links-list" id="links-for-room-${room.id}">
+                    ${room.links.map(renderLinkToString).join('')}
+                </div>
+                <form class="add-link-form" data-room-id="${room.id}">
+                    <input type="url" placeholder="URL جدید" required>
+                    <button type="submit">افزودن لینک</button>
+                </form>
+            `;
+            roomsContainer.appendChild(roomCard);
+        });
+    }
+
+    function renderLinkToString(link) {
+        return `
+            <div class="link-admin-item" id="admin-link-${link.id}">
+                <span>${link.url}</span>
+                <div class="controls">
+                    <select class="status-changer" data-id="${link.id}">
+                        <option value="available" ${link.status === 'available' ? 'selected' : ''}>خالی</option>
+                        <option value="filling" ${link.status === 'filling' ? 'selected' : ''}>درحال پر شدن</option>
+                        <option value="full" ${link.status === 'full' ? 'selected' : ''}>اتمام ظرفیت</option>
+                    </select>
+                    <button class="delete-btn" data-id="${link.id}">🗑️</button>
+                </div>
+            </div>
+        `;
+    }
+
+    // --- Event Handlers ---
+    createRoomForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const input = document.getElementById('room-name-input');
+        try {
+            const newRoom = await api.post('/api/rooms', { name: input.value });
+            allRoomsData.push(newRoom);
+            renderRooms(allRoomsData);
+            input.value = '';
+        } catch (err) {
+            alert('خطا در ساخت اتاق. ممکن است نام تکراری باشد.');
+        }
+    });
+
+    roomsContainer.addEventListener('submit', async (e) => {
+        if (e.target.classList.contains('add-link-form')) {
+            e.preventDefault();
+            const form = e.target;
+            const roomId = form.dataset.roomId;
+            const urlInput = form.querySelector('input[type="url"]');
+            try {
+                const newLink = await api.post('/api/links', { roomId, url: urlInput.value });
+                const roomData = allRoomsData.find(r => r.id == roomId);
+                roomData.links.push(newLink);
+                renderRooms(allRoomsData); // Re-render for simplicity
+            } catch {
+                alert('خطا در افزودن لینک.');
+            }
+        }
+    });
+
+    roomsContainer.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('delete-btn')) {
+            const linkId = e.target.dataset.id;
+            if (confirm('آیا از حذف این لینک مطمئن هستید؟')) {
+                try {
+                    await api.delete(`/api/links/${linkId}`);
+                    // Remove from local data and re-render
+                    allRoomsData.forEach(room => {
+                        room.links = room.links.filter(link => link.id != linkId);
+                    });
+                    renderRooms(allRoomsData);
+                } catch {
+                    alert('خطا در حذف لینک.');
+                }
+            }
+        }
+    });
+
+    roomsContainer.addEventListener('change', async (e) => {
+        if (e.target.classList.contains('status-changer')) {
+            const linkId = e.target.dataset.id;
+            const newStatus = e.target.value;
+            try {
+                await api.put(`/api/links/${linkId}`, { status: newStatus });
+                 // Update local data
+                allRoomsData.forEach(room => {
+                    const link = room.links.find(l => l.id == linkId);
+                    if(link) link.status = newStatus;
+                });
+            } catch {
+                alert('خطا در تغییر وضعیت.');
+            }
+        }
+    });
+
+    // --- Initial Load ---
+    async function loadAdminData() {
+        try {
+            allRoomsData = await api.get('/api/admin/data');
+            renderRooms(allRoomsData);
+        } catch (error) {
+            // If fetching fails, it's likely the session expired
+            window.location.href = '/login.html';
+        }
+    }
+    loadAdminData();
+</script>
+</body>
+</html>
