@@ -21,8 +21,7 @@
             </form>
         </div>
 
-        <div id="rooms-management-container">
-            </div>
+        <div id="rooms-management-container"></div>
     </div>
 
 <script>
@@ -37,41 +36,35 @@
         isSuperAdmin: false
     };
 
-    // --- توابع API ---
     const api = {
         get: (url) => fetch(url).then(res => res.ok ? res.json() : Promise.reject(res)),
         post: (url, body) => fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) }).then(res => res.ok ? res.json() : Promise.reject(res)),
         put: (url, body) => fetch(url, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) }).then(res => res.ok ? res.json() : Promise.reject(res)),
-        // متد حذف برای اتاق‌ها (بدون body) و لینک‌ها (با body)
-        delete: (url, body) => fetch(url, { 
-            method: 'DELETE', 
-            headers: body ? {'Content-Type': 'application/json'} : {}, 
-            body: body ? JSON.stringify(body) : null 
-        }).then(res => res.ok ? res.json() : Promise.reject(res)),
+        delete: (url, body) => fetch(url, { method: 'DELETE', headers: body ? {'Content-Type': 'application/json'} : {}, body: body ? JSON.stringify(body) : null }).then(res => res.ok ? res.json() : Promise.reject(res)),
     };
     
-    // --- توابع رندر کردن ---
     function renderDashboard() {
-        roomsContainer.innerHTML = '';
+        const newContent = document.createDocumentFragment();
         adminData.rooms.forEach(room => {
             const roomCard = document.createElement('div');
             roomCard.className = 'card room-card';
             roomCard.id = `room-card-${room.id}`;
             roomCard.innerHTML = renderRoomToString(room);
-            roomsContainer.appendChild(roomCard);
+            newContent.appendChild(roomCard);
         });
+        roomsContainer.innerHTML = '';
+        roomsContainer.appendChild(newContent);
     }
 
     function renderRoomToString(room) {
-        // نمایش دکمه حذف اتاق برای تمام کاربران دارای دسترسی
-        const deleteButtonHTML = `<button class="delete-room-btn" data-room-id="${room.id}">حذف اتاق</button>`;
-
+        const creator = adminData.users.find(u => u.id === room.user_id)?.username || 'ناشناس';
+        const creatorBadge = adminData.isSuperAdmin ? `<span class="creator-badge">سازنده: ${creator}</span>` : '';
         return `
             <div class="room-header">
-                <h3>اتاق: ${room.name}</h3>
+                <h3>اتاق: ${room.name} ${creatorBadge}</h3>
                 <div class="room-actions">
                      <a href="/${room.name}" target="_blank">مشاهده</a>
-                     ${deleteButtonHTML}
+                     <button class="delete-room-btn" data-room-id="${room.id}">حذف اتاق</button>
                 </div>
             </div>
             <div class="links-list">
@@ -116,70 +109,81 @@
         return `<div class="permissions-section"><h4>مدیریت دسترسی</h4><div class="permissions-list">${userCheckboxes}</div></div>`;
     }
 
-    // --- مدیریت رویدادها ---
+    // --- Event Handlers (sends requests, UI updates are handled by socket listeners) ---
     createRoomForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const input = document.getElementById('room-name-input');
-        try {
-            // فقط درخواست را ارسال می‌کنیم، آپدیت صفحه توسط سوکت انجام می‌شود
-            await api.post('/api/rooms', { name: input.value });
-            input.value = '';
-        } catch (err) {
-            alert('خطا در ساخت اتاق. ممکن است نام تکراری باشد.');
-        }
+        api.post('/api/rooms', { name: input.value })
+            .then(() => input.value = '')
+            .catch(() => alert('خطا در ساخت اتاق.'));
     });
-
-    roomsContainer.addEventListener('click', async (e) => {
-        // رویداد حذف لینک
+    
+    roomsContainer.addEventListener('click', (e) => {
         if (e.target.classList.contains('delete-link-btn')) {
             const linkId = e.target.dataset.id;
             if (confirm('آیا از حذف این لینک مطمئن هستید؟')) {
                 api.delete(`/api/links/${linkId}`).catch(() => alert('خطا در حذف لینک.'));
             }
         }
-        // رویداد حذف اتاق
         if (e.target.classList.contains('delete-room-btn')) {
             const roomId = e.target.dataset.roomId;
-            if (confirm(`آیا از حذف اتاق با آیدی ${roomId} و تمام لینک‌های آن مطمئن هستید؟`)) {
+            if (confirm(`آیا از حذف این اتاق و تمام محتویات آن مطمئن هستید؟`)) {
                 api.delete(`/api/rooms/${roomId}`).catch(() => alert('خطا در حذف اتاق.'));
             }
         }
     });
 
-    // سایر رویدادها (افزودن لینک، تغییر وضعیت و دسترسی)
-    roomsContainer.addEventListener('submit', async e => { /* ... کد مشابه قبل ... */ });
-    roomsContainer.addEventListener('change', async e => { /* ... کد مشابه قبل ... */ });
-
-
-    // --- منطق ریل-تایم با سوکت ---
-
-    // گوش دادن به رویداد اضافه شدن اتاق
-    socket.on('room_added', (newRoom) => {
-        console.log('Room added or permission granted:', newRoom);
-        const existingIndex = adminData.rooms.findIndex(r => r.id === newRoom.id);
-        if (existingIndex > -1) {
-            adminData.rooms[existingIndex] = newRoom; // آپدیت اتاق موجود
-        } else {
-            adminData.rooms.push(newRoom); // اضافه کردن اتاق جدید
-            adminData.rooms.sort((a, b) => a.name.localeCompare(b.name)); // مرتب‌سازی
+    roomsContainer.addEventListener('submit', (e) => {
+        if (e.target.classList.contains('add-link-form')) {
+            e.preventDefault();
+            const form = e.target;
+            const roomId = form.dataset.roomId;
+            const urlInput = form.querySelector('input[type="url"]');
+            api.post('/api/links', { roomId, url: urlInput.value })
+               .then(() => form.reset())
+               .catch(() => alert('خطا در افزودن لینک.'));
         }
+    });
+
+    roomsContainer.addEventListener('change', (e) => {
+        if (e.target.classList.contains('status-changer')) {
+            const linkId = e.target.dataset.id;
+            const newStatus = e.target.value;
+            api.put(`/api/links/${linkId}`, { status: newStatus }).catch(() => alert('خطا در تغییر وضعیت.'));
+        }
+        if (e.target.classList.contains('permission-checkbox')) {
+            const checkbox = e.target;
+            const payload = { userId: checkbox.dataset.userId, roomId: checkbox.dataset.roomId };
+            const action = checkbox.checked ? api.post('/api/permissions', payload) : api.delete('/api/permissions', payload);
+            action.catch(() => {
+                alert('خطا در تغییر دسترسی.');
+                checkbox.checked = !checkbox.checked;
+            });
+        }
+    });
+
+    // --- Socket Listeners (handles all UI updates) ---
+    socket.on('room_updated', (updatedRoom) => {
+        const index = adminData.rooms.findIndex(r => r.id === updatedRoom.id);
+        if (index > -1) {
+            adminData.rooms[index] = updatedRoom;
+        } else {
+            adminData.rooms.push(updatedRoom);
+        }
+        adminData.rooms.sort((a, b) => a.name.localeCompare(b.name));
         renderDashboard();
     });
 
-    // گوش دادن به رویداد حذف شدن اتاق
     socket.on('room_deleted', (data) => {
-        console.log('Room deleted or permission revoked:', data);
         adminData.rooms = adminData.rooms.filter(r => r.id !== data.roomId);
         renderDashboard();
     });
 
-
-    // --- بارگذاری اولیه داده‌ها ---
+    // --- Initial Load ---
     async function loadAdminData() {
         try {
             adminData = await api.get('/api/admin/data');
             renderDashboard();
-            // اتصال ادمین به روم شخصی خودش در سوکت
             socket.emit('admin_join', adminData.currentUserId);
         } catch (error) {
             window.location.href = '/login.html';
@@ -187,7 +191,6 @@
     }
 
     loadAdminData();
-
 </script>
 </body>
 </html>
