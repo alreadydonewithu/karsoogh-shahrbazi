@@ -1,23 +1,34 @@
-@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700&display=swap');
 
 :root {
-    --primary-color: #007bff;
-    --success-color: #28a745;
-    --warning-color: #ffc107;
-    --danger-color: #dc3545;
-    --light-gray: #f4f4f9;
-    --dark-gray: #333;
-    --white: #fff;
-    --border-color: #ddd;
+    --dark-bg: #121212;
+    --dark-card: #1E1E1E;
+    --text-primary: #EAEAEA;
+    --text-secondary: #B3B3B3;
+    --glow-purple: #9f5fde;
+    --glow-red: #f92672;
+    --border-color: #333;
+    --success-green: #28a745;
+    --warning-yellow: #ffc107;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 body {
     font-family: 'Vazirmatn', sans-serif;
-    background-color: var(--light-gray);
-    color: var(--dark-gray);
-    margin: 0;
+    background-color: var(--dark-bg);
+    color: var(--text-primary);
     padding: 20px;
     direction: rtl;
+}
+
+/* اصلاح فونت برای تمام عناصر فرم */
+input, button, select, textarea {
+    font-family: inherit;
 }
 
 .container {
@@ -26,89 +37,245 @@ body {
     margin: 0 auto;
 }
 
-h1, h2, h3 { color: #444; }
-
-.card {
-    background-color: var(--white);
-    padding: 20px;
-    margin-bottom: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+/* --- Login Page Styles --- */
+.login-body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
 }
 
-/* --- Login Page --- */
-.login-body { display: flex; justify-content: center; align-items: center; height: 100vh; }
-.login-card { width: 350px; }
-.login-card h1 { text-align: center; }
+.login-card {
+    background: var(--dark-card);
+    padding: 40px;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(159, 95, 222, 0.15);
+}
+
+.login-icon-wrapper {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, rgba(159, 95, 222, 0.1), rgba(124, 58, 237, 0.1));
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid var(--border-color);
+}
+
+.login-icon-wrapper svg {
+    width: 40px;
+    height: 40px;
+    color: var(--glow-purple);
+}
+
+.login-card h1 {
+    font-size: 2rem;
+    color: var(--text-primary);
+    margin-bottom: 30px;
+}
 
 /* --- Forms & Buttons --- */
-form { display: flex; gap: 10px; }
-form.add-link-form { margin-top: 15px; }
-input[type="text"], input[type="url"], input[type="password"] {
-    flex-grow: 1;
-    padding: 10px;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    font-size: 16px;
+form { display: flex; flex-direction: column; gap: 20px; }
+.form-inline { flex-direction: row; gap: 10px; align-items: center; }
+
+.input-group {
+    position: relative;
 }
-button, a.button {
-    padding: 10px 15px;
-    background-color: var(--primary-color);
-    color: var(--white);
+
+.input-group svg {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    pointer-events: none;
+}
+
+input[type="text"], input[type="url"], input[type="password"] {
+    background-color: var(--dark-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+.input-group input { padding-right: 45px; }
+
+input:focus {
+    outline: none;
+    border-color: var(--glow-purple);
+    box-shadow: 0 0 10px rgba(159, 95, 222, 0.3);
+}
+
+button {
+    padding: 12px 15px;
+    background: linear-gradient(45deg, var(--glow-purple), #7c3aed);
+    color: var(--text-primary);
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 16px;
-    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
     white-space: nowrap;
 }
-button:hover, a.button:hover { background-color: #0056b3; }
+button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(159, 95, 222, 0.4);
+}
+
+button:disabled {
+    background: #444;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    opacity: 0.5;
+}
 
 /* --- Admin Panel --- */
-.admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.admin-header a { background-color: var(--danger-color); }
-.admin-header a:hover { background-color: #c82333; }
-.room-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
-.room-header a { font-size: 14px; }
-.link-admin-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-radius: 4px; }
-.link-admin-item:nth-child(odd) { background-color: #f9f9f9; }
-.link-admin-item .controls { display: flex; gap: 10px; align-items: center; }
-.controls select { padding: 5px; border-radius: 4px; border: 1px solid #ccc; }
-.controls .delete-btn { background: none; border: none; font-size: 18px; color: var(--danger-color); cursor: pointer; padding: 0; }
-
-/* --- Public Room Page --- */
-#room-title { text-align: center; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; }
-#links-container { display: flex; flex-direction: column; gap: 15px; }
-.link-item {
+.admin-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: var(--white);
-    padding: 15px 20px;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+.admin-header a {
+    background-color: var(--glow-red);
+    color: var(--text-primary);
+    padding: 8px 15px;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    transition: all 0.2s;
     text-decoration: none;
-    color: var(--dark-gray);
+    font-size: 14px;
+}
+
+.card {
+    background-color: var(--dark-card);
+    padding: 25px;
+    margin-bottom: 25px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.room-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+.room-header h3 { font-size: 1.2rem; }
+
+.room-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.room-actions a {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--glow-purple);
+    text-decoration: none;
+}
+
+.delete-room-btn {
+    background: var(--glow-red);
+    font-size: 0.8rem;
+    padding: 6px 10px;
+}
+
+.delete-room-btn:hover {
+    background: #d61a62;
+    box-shadow: 0 2px 10px rgba(249, 38, 114, 0.4);
+}
+
+.link-admin-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    background-color: #2a2a2a;
+}
+.controls { display: flex; gap: 10px; align-items: center; }
+.controls .delete-link-btn { background: none; border: none; font-size: 1.2rem; color: var(--glow-red); cursor: pointer; padding: 0; }
+.controls select { background-color: #333; color: white; border: 1px solid #444; border-radius: 4px; padding: 5px; }
+
+.permissions-section { margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px; }
+.permissions-section h4 { margin-bottom: 10px; color: var(--text-secondary); }
+.permissions-list { display: flex; flex-wrap: wrap; gap: 15px; }
+.permission-item { display: flex; align-items: center; gap: 5px; }
+input[type="checkbox"] { accent-color: var(--glow-purple); }
+
+/* --- Public Room Page --- */
+#room-title {
+    text-align: center;
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 40px;
+    color: var(--text-primary);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+#links-container { display: flex; flex-direction: column; gap: 15px; }
+.link-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 15px;
+    align-items: center;
+    background-color: var(--dark-card);
+    padding: 15px 20px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
     border-right: 5px solid;
 }
-.link-url { font-weight: bold; }
-.link-status { padding: 5px 12px; border-radius: 15px; font-size: 12px; color: white; }
+.link-item:hover { transform: scale(1.01); border-color: var(--glow-purple); }
 
-.status-available { border-color: var(--success-color); }
-.status-available .link-status { background-color: var(--success-color); }
+.link-url {
+    font-weight: bold;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary);
+    text-decoration: none;
+}
+.link-status { padding: 5px 12px; border-radius: 15px; font-size: 12px; color: #121212; font-weight: 500; }
 
-.status-filling { border-color: var(--warning-color); }
-.status-filling .link-status { background-color: var(--warning-color); color: var(--dark-gray); }
+.copy-btn {
+    font-size: 12px;
+    padding: 6px 10px;
+    background: #333;
+    font-weight: 400;
+}
+.copy-btn:hover:not(:disabled) { background: #444; box-shadow: none; transform: none; }
+.copy-btn.copied { background: var(--glow-purple); }
 
-.status-full { border-color: var(--danger-color); }
-.status-full .link-status { background-color: var(--danger-color); }
+/* Statuses */
+.status-available { border-color: var(--success-green); }
+.status-available .link-status { background-color: var(--success-green); }
+.status-filling { border-color: var(--warning-yellow); }
+.status-filling .link-status { background-color: var(--warning-yellow); }
+.status-full { border-color: var(--glow-red); }
+.status-full .link-status { background-color: var(--glow-red); color: white; }
 
 .link-item.locked {
-    background-color: #f8f9fa;
+    background-color: #2a2a2a;
     cursor: not-allowed;
+    border-color: #444;
 }
-.link-item.locked .link-url {
-    color: #aaa;
-    text-decoration: line-through;
-}
+.link-item.locked .link-url { text-decoration: line-through; color: var(--text-secondary); pointer-events: none; }
+.link-item.locked:hover { transform: none; border-color: #444; }

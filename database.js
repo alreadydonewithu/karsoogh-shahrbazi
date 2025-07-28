@@ -1,40 +1,16 @@
-const Database = require('better-sqlite3');
+// database.js
+
 const path = require('path');
+const Database = require('better-sqlite3');
 
-const db = new Database(path.join(__dirname, 'site.db'));
+// ساخت مسیر مطلق به فایل دیتابیس برای جلوگیری از هرگونه ابهام
+const dbPath = path.resolve(__dirname, 'site.db');
 
-// فعال کردن حالت Write-Ahead Logging برای بهبود همزمانی و جلوگیری از قفل شدن
+// ایجاد یک نمونه جدید از دیتابیس
+const db = new Database(dbPath);
+
+// فعال کردن حالت WAL برای عملکرد بهتر
 db.pragma('journal_mode = WAL');
 
-// ساخت جداول در صورت عدم وجود
-function initDb() {
-    db.exec(`
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL
-        );
-    `);
-    
-    db.exec(`
-        CREATE TABLE IF NOT EXISTS rooms (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT UNIQUE NOT NULL
-        );
-    `);
-
-    db.exec(`
-        CREATE TABLE IF NOT EXISTS links (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            room_id INTEGER NOT NULL,
-            url TEXT NOT NULL,
-            status TEXT NOT NULL DEFAULT 'available', -- available, filling, full
-            FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
-        );
-    `);
-    console.log('Database initialized successfully.');
-}
-
-initDb();
-
+// صادر کردن نمونه دیتابیس برای استفاده در کل پروژه
 module.exports = db;
